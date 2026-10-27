@@ -14,7 +14,8 @@ function regionHeight(i, x, z) {
     case 'camp':
       return 3 + fbm(nA, x / 300, z / 300, 3) * 3;
     case 'savanna': {
-      const outcrop = Math.max(0, nC(x / 85, z / 85) - 0.62) * 55;
+      const o = Math.max(0, nC(x / 110, z / 110) - 0.7);
+      const outcrop = o * o * 260; // rare, rounded kopjes instead of spikes
       return 4 + fbm(nA, x / 420, z / 420, 4) * 9 + outcrop;
     }
     case 'forest':

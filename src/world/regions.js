@@ -11,7 +11,7 @@ export const REGIONS = [
   {
     id: 'savanna', name: 'Golden Savanna', center: [620, 520], scale: 1,
     ground: [0xa8904f, 0xc2a35c], grass: 0xc9a85a, map: '#c9a24f',
-    trees: { acacia: 0.35 }, bushDensity: 0.55, rockDensity: 0.25, animal: 'lion', animalCount: 22,
+    trees: { acacia: 0.5 }, bushDensity: 0.55, rockDensity: 0.25, animal: 'lion', animalCount: 22,
   },
   {
     id: 'forest', name: 'Whispering Forest', center: [-640, 480], scale: 1,

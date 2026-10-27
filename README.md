@@ -170,3 +170,14 @@ The prototype is fully playable. Possible next steps:
 5. **Day/night cycle**, plus rain in the forest.
 6. **Server referee.** A Cloud Function that keeps the hider's bush secret and validates "found". This needs the Blaze plan, which has a free tier but requires a card.
 7. **PWA install.** A manifest + service worker so it installs like an app on phones.
+
+## Screenshots
+
+Taken by the automated two-player test (software rendering, low quality setting):
+
+| | |
+|---|---|
+| ![Menu](docs/screenshots/01-menu.png) | ![Lobby](docs/screenshots/02-lobby.png) |
+| ![Dice](docs/screenshots/03-dice.png) | ![Seeker blindfold](docs/screenshots/04-blind.png) |
+| ![Searching a bush](docs/screenshots/06-seeking.png) | ![Lion attack](docs/screenshots/07b-bitten.png) |
+| ![Seekers win](docs/screenshots/08-end.png) | ![Hider view](docs/screenshots/09-end-hider.png) |
