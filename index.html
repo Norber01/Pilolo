@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1d2a1d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Hide &amp; Seek — Wildlands</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>" />
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="loading" class="screen">
+    <h1>Hide &amp; Seek <span>Wildlands</span></h1>
+    <div class="bar"><div id="load-fill"></div></div>
+    <p id="load-text">Loading…</p>
+  </div>
+
+  <div id="menu" class="screen hidden">
+    <div class="card">
+      <h1>Hide &amp; Seek <span>Wildlands</span></h1>
+      <p class="tag">2–3 friends · roll the dice · the winner hides in a bush · everyone else searches a huge wild world full of lions, wolves, bears and crocodiles. The hider can never be attacked.</p>
+      <label>Your name <input id="name" maxlength="16" placeholder="e.g. Amara" autocomplete="off" /></label>
+      <button id="btn-create" class="primary">Create a room</button>
+      <div class="join">
+        <input id="code" maxlength="5" placeholder="ROOM CODE" autocomplete="off" />
+        <button id="btn-join">Join</button>
+      </div>
+      <p id="menu-error" class="error"></p>
+      <p id="mode" class="mode"></p>
+      <details>
+        <summary>How to play</summary>
+        <ul>
+          <li><b>Move:</b> WASD / arrows · <b>Run:</b> Shift · <b>Jump:</b> Space · <b>Look:</b> mouse (click to lock) · <b>Zoom:</b> wheel · <b>Map:</b> M · <b>Action:</b> E</li>
+          <li><b>Phone:</b> left thumb = joystick, right thumb = look, buttons for Run / Jump / Action. Tap the map to enlarge it.</li>
+          <li>Everyone rolls a die. Highest roll hides (ties re-roll).</li>
+          <li>The hider gets 75 s (host can change it) to get into a bush. Seekers are blindfolded at camp.</li>
+          <li>Seekers then have 5 minutes (adjustable). Walk up to a bush and <b>Search</b> it. Every minute a yellow hint circle on the map shrinks around the hider.</li>
+          <li>Wild animals hunt seekers. Get mauled and you are sent back to camp. The hider is never attacked.</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+
+  <div id="lobby" class="panel hidden">
+    <div class="lobby-head">
+      <div>Room <b id="lobby-code" class="code"></b></div>
+      <button id="lobby-toggle" class="icon" title="Collapse">▾</button>
+    </div>
+    <div class="lobby-body">
+      <button id="btn-copy" class="small">📋 Copy invite link</button>
+      <ul id="lobby-players" class="players"></ul>
+      <p id="lobby-hint" class="muted"></p>
+      <div id="host-opts" class="opts">
+        <label>Hide time
+          <select id="opt-hide"><option value="45">45 s</option><option value="75" selected>75 s</option><option value="120">2 min</option></select>
+        </label>
+        <label>Seek time
+          <select id="opt-seek"><option value="180">3 min</option><option value="300" selected>5 min</option><option value="480">8 min</option></select>
+        </label>
+      </div>
+      <button id="btn-start" class="primary">Start game 🎲</button>
+      <button id="btn-leave" class="small ghost">Leave room</button>
+    </div>
+  </div>
+
+  <div id="dice" class="overlay hidden">
+    <div class="card wide">
+      <h2 id="dice-title">Roll the dice!</h2>
+      <div id="dice-row"></div>
+      <p id="dice-msg" class="muted"></p>
+      <button id="btn-roll" class="primary big hidden">🎲 Roll</button>
+    </div>
+  </div>
+
+  <div id="blind" class="overlay dark hidden">
+    <div class="blind-inner">
+      <div class="eyes">🙈</div>
+      <h2>Close your eyes!</h2>
+      <p>The hider is looking for a bush…</p>
+      <div id="blind-time" class="big-time"></div>
+    </div>
+  </div>
+
+  <div id="end" class="overlay hidden">
+    <div class="card">
+      <h2 id="end-title"></h2>
+      <p id="end-sub" class="muted"></p>
+      <ul id="end-scores" class="players"></ul>
+      <p id="end-wait" class="muted"></p>
+      <button id="btn-again" class="primary">Play again 🎲</button>
+      <button id="btn-to-lobby" class="small">Back to lobby</button>
+      <button id="btn-end-leave" class="small ghost">Leave room</button>
+    </div>
+  </div>
+
+  <div id="hud" class="hidden">
+    <div class="top">
+      <span id="role"></span>
+      <span id="phase"></span>
+      <span id="timer"></span>
+    </div>
+    <div id="health"><div id="health-fill"></div></div>
+    <div id="threat"></div>
+    <div id="near"></div>
+    <div id="prompt" class="hidden"></div>
+    <div id="search-bar" class="hidden"><div id="search-fill"></div><span>Searching…</span></div>
+    <canvas id="minimap" width="360" height="360"></canvas>
+  </div>
+  <div id="vignette"></div>
+  <div id="region"></div>
+  <div id="toasts"></div>
+  <div id="fps"></div>
+
+  <div id="touch">
+    <div id="stick"><div id="knob"></div></div>
+    <button id="btn-sprint" class="tbtn">Run</button>
+    <button id="btn-jump" class="tbtn">Jump</button>
+    <button id="btn-action" class="tbtn action hidden"></button>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

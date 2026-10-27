@@ -1,0 +1,21 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || !data.child('players').exists() || data.child('players').child(auth.uid).exists())",
+        ".validate": "$code.matches(/^[A-Z0-9]{5}$/)",
+        "players": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16" },
+            "color": { ".validate": "newData.isString() && newData.val().length <= 9" },
+            "joinedAt": { ".validate": "newData.isNumber()" }
+          }
+        }
+      }
+    }
+  }
+}
