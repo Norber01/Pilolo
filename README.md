@@ -50,6 +50,8 @@ npm run dev
 
 Open the URL it prints (usually http://localhost:5173).
 
+**Playing alone?** Press **🤖 Play alone vs a bot** on the menu, or **Add a bot** in any lobby. A bot is a normal player in the room: it rolls the dice, hides in a bush when it wins, and searches bushes as a seeker. It plays fair, using the same map hints you get, and chases a hider it spots in the open. It runs on the host's device, so it works offline and online, and you can mix bots with friends (max 3 players). If the host leaves, their bots leave too.
+
 Without a Firebase config the game starts in **🧪 Local test mode**. Every browser tab on the same computer shares one pretend server, so you can test multiplayer by yourself:
 
 1. Tab 1: enter a name, **Create a room**, then **Copy invite link**.
@@ -140,6 +142,7 @@ src/entities/
   animals.js               Lions, wolves, bears, crocodiles: models + hunting AI
 src/game/
   game.js                  Gameplay: phases, hiding, searching, tagging, damage, hints, HUD
+  bot.js                   Computer player (hides, searches with hints, flees animals)
   controls.js              Keyboard/mouse + virtual joystick
   camera.js                Third-person camera with terrain collision
 src/net/

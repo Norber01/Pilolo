@@ -112,6 +112,16 @@ async function boot() {
     }
   };
   $('btn-create').onclick = () => enterRoom((room) => room.create(getName()));
+  $('btn-solo').onclick = () => enterRoom(async (room) => {
+    const code = await room.create(getName());
+    await room.addBot();
+    return code;
+  });
+  $('btn-bot').onclick = () => game.room?.addBot().catch((e) => toast(e.message));
+  $('lobby-players').addEventListener('click', (e) => {
+    const id = e.target.closest('[data-bot]')?.dataset.bot;
+    if (id) game.room?.removeBot(id);
+  });
   $('btn-join').onclick = () => {
     const code = $('code').value.trim();
     if (!code) { $('menu-error').textContent = 'Type the room code your friend gave you.'; return; }
@@ -161,7 +171,7 @@ async function boot() {
     } else {
       cam.orbit(dt, center, 40, 14);
       world.update(dt, camera, camera.position);
-      wildlife.update(dt, [], camera.position, () => {});
+      wildlife.update(dt, [], camera.position);
     }
     renderer.render(scene, camera);
     if (fps) {

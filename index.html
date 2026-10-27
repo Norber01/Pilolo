@@ -23,6 +23,7 @@
       <p class="tag">2–3 friends · roll the dice · the winner hides in a bush · everyone else searches a huge wild world full of lions, wolves, bears and crocodiles. The hider can never be attacked.</p>
       <label>Your name <input id="name" maxlength="16" placeholder="e.g. Amara" autocomplete="off" /></label>
       <button id="btn-create" class="primary">Create a room</button>
+      <button id="btn-solo">🤖 Play alone vs a bot</button>
       <div class="join">
         <input id="code" maxlength="5" placeholder="ROOM CODE" autocomplete="off" />
         <button id="btn-join">Join</button>
@@ -37,6 +38,7 @@
           <li>Everyone rolls a die. Highest roll hides (ties re-roll).</li>
           <li>The hider gets 75 s (host can change it) to get into a bush. Seekers are blindfolded at camp.</li>
           <li>Seekers then have 5 minutes (adjustable). Walk up to a bush and <b>Search</b> it. Every minute a yellow hint circle on the map shrinks around the hider.</li>
+          <li>Nobody online? Press <b>Play alone vs a bot</b>, or <b>Add a bot</b> in the lobby. Bots roll, hide and seek like a real player, using the same map hints.</li>
           <li>Wild animals hunt seekers. Get mauled and you are sent back to camp. The hider is never attacked.</li>
         </ul>
       </details>
@@ -51,6 +53,7 @@
     <div class="lobby-body">
       <button id="btn-copy" class="small">📋 Copy invite link</button>
       <ul id="lobby-players" class="players"></ul>
+      <button id="btn-bot" class="small">🤖 Add a bot</button>
       <p id="lobby-hint" class="muted"></p>
       <div id="host-opts" class="opts">
         <label>Hide time

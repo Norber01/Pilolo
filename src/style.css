@@ -140,3 +140,4 @@ body:not(.touch) #touch { display: none; }
 .opts { display: flex; gap: 8px; }
 .opts label { flex: 1; margin: 0; font-size: 12px; }
 select { font: inherit; width: 100%; padding: 7px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.35); color: var(--fg); margin-top: 3px; }
+.players .kick { margin-left: 4px; padding: 0 8px; font-size: 12px; background: transparent; }

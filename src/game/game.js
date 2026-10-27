@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GAME, PLAYER, WORLD, NET, SPAWN } from '../config.js';
 import { Character } from '../entities/character.js';
+import { Bot } from './bot.js';
 import { REGIONS } from '../world/regions.js';
 import { mulberry32 } from '../world/rng.js';
 import { $, show, setHTML, toast, banner, fmtTime, esc, DiceView } from '../ui/ui.js';
@@ -13,6 +14,7 @@ export class Game {
     this.veg = world.vegetation;
     this.room = null;
     this.remotes = new Map();
+    this.bots = new Map(); // bots this device simulates
     this.dice = new DiceView();
     this.phaseKey = '';
     this.sendTimer = 0;
@@ -45,6 +47,7 @@ export class Game {
     this.unsub?.();
     for (const r of this.remotes.values()) this.scene.remove(r.char.root);
     this.remotes.clear();
+    this.bots.clear();
     if (this.me) this.scene.remove(this.me.char.root);
     this.me = null;
     this.room = null;
@@ -107,6 +110,10 @@ export class Game {
         toast(`${r.name} left`);
       }
     }
+    // Bots that this device is in charge of.
+    for (const p of room.myBots) if (!this.bots.has(p.id)) this.bots.set(p.id, new Bot(p.id, this));
+    for (const id of this.bots.keys()) if (!room.player(id)) this.bots.delete(id);
+
     // Shared list of searched bushes.
     const searched = room.data.searched || {};
     for (const id of Object.keys(searched)) this.veg.markSearched(+id);
@@ -125,6 +132,7 @@ export class Game {
     this.search = null;
     this.hint = null;
     this.hintIndex = 0;
+    this.hintToasted = 0;
     if (phase === 'lobby') {
       this.veg.clearSearched();
       this.leaveBush(false);
@@ -164,13 +172,14 @@ export class Game {
     $('lobby-code').textContent = room.code;
     const scores = room.state.scores || {};
     setHTML('lobby-players', room.players.map((p) =>
-      `<li><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}${p.id === room.hostId ? ' <em>host</em>' : ''}${p.id === room.uid ? ' <em>you</em>' : ''}<span class="score">${scores[p.id] || 0}</span></li>`).join(''));
+      `<li><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}${p.id === room.hostId ? ' <em>host</em>' : ''}${p.id === room.uid ? ' <em>you</em>' : ''}<span class="score">${scores[p.id] || 0}</span>${p.bot === room.uid ? `<button class="icon kick" data-bot="${esc(p.id)}" title="Remove bot">✕</button>` : ''}</li>`).join(''));
+    show('btn-bot', room.isHost && room.players.length < GAME.maxPlayers);
     const enough = room.players.length >= room.minPlayers;
     show('btn-start', room.isHost);
     show('host-opts', room.isHost);
     $('btn-start').disabled = !enough;
     $('lobby-hint').textContent = !enough
-      ? `Waiting for friends… share the code (${room.players.length}/${GAME.maxPlayers}).`
+      ? `Share the code with friends (${room.players.length}/${GAME.maxPlayers}), or add a bot to play alone.`
       : room.isHost ? 'Everyone here? Press Start!' : 'Waiting for the host to start…';
   }
 
@@ -250,6 +259,24 @@ export class Game {
     if (bush != null) return this.veg.bushes[bush];
     if (st.hiderId === this.room.uid) return this.me.pos;
     return this.remotes.get(st.hiderId)?.pos || null;
+  }
+
+  /** The current seeker hint circle (same for every seeker, bots included), or null. */
+  hintFor(now) {
+    const st = this.room.state;
+    if (st.phase !== 'seeking') return null;
+    const k = Math.floor((now - st.startsAt) / 1000 / GAME.hintEvery);
+    if (k < 1) return null;
+    if (k !== this.hintIndex || !this.hint) {
+      const hp = this.hiderPosition();
+      if (!hp) return this.hint;
+      const radius = GAME.hintRadii[Math.min(k - 1, GAME.hintRadii.length - 1)];
+      const rnd = mulberry32(st.round * 1000 + k);
+      const a = rnd() * Math.PI * 2, d = rnd() * radius * 0.65;
+      this.hint = { x: hp.x + Math.cos(a) * d, z: hp.z + Math.sin(a) * d, r: radius };
+      this.hintIndex = k;
+    }
+    return this.hint;
   }
 
   canMove() {
@@ -386,16 +413,20 @@ export class Game {
       r.char.animate(dt, s.v, !!s.a, !!s.c);
     }
 
+    for (const bot of this.bots.values()) bot.update(dt, now);
+
     // Wildlife: only seekers (and everyone outside a round) are prey. Never the hider.
     const targets = [];
     if (st.phase !== 'hiding' && st.phase !== 'dice') {
-      if (!(this.inRound && this.isHider) && me.dead <= 0) targets.push({ id: room.uid, pos: me.pos, isLocal: true, alive: true });
+      if (!(this.inRound && this.isHider) && me.dead <= 0) targets.push({ id: room.uid, pos: me.pos, onHit: (a) => this.onAnimalHit(a), alive: true });
       for (const [id, r] of this.remotes) {
         if (!r.s || (this.inRound && id === st.hiderId) || r.s.hp <= 0) continue;
-        targets.push({ id, pos: r.pos, isLocal: false, alive: true });
+        const bot = this.bots.get(id);
+        if (bot) { if (bot.dead <= 0 && bot.hidden == null) targets.push({ id, pos: bot.pos, onHit: (a) => bot.onHit(a), alive: true }); continue; }
+        targets.push({ id, pos: r.pos, alive: true });
       }
     }
-    this.wildlife.update(dt, targets, this.camera.position, (a) => this.onAnimalHit(a));
+    this.wildlife.update(dt, targets, this.camera.position);
 
     // Camera
     const focus = new THREE.Vector3(me.pos.x, me.pos.y + 1.55 - me.char.crouch * 0.6, me.pos.z);
@@ -526,20 +557,10 @@ export class Game {
     // Seeker map hints: a circle that contains the hider, shrinking over time.
     let hint = null;
     if (role === 'seeker' && st.phase === 'seeking') {
-      const k = Math.floor((now - st.startsAt) / 1000 / GAME.hintEvery);
-      if (k >= 1) {
-        if (k !== this.hintIndex || !this.hint) {
-          const hp = this.hiderPosition();
-          if (hp) {
-            const radius = GAME.hintRadii[Math.min(k - 1, GAME.hintRadii.length - 1)];
-            const rnd = mulberry32(st.round * 1000 + k);
-            const a = rnd() * Math.PI * 2, d = rnd() * radius * 0.65;
-            this.hint = { x: hp.x + Math.cos(a) * d, z: hp.z + Math.sin(a) * d, r: radius };
-            this.hintIndex = k;
-            toast('📍 New hint on the map: the hider is inside the yellow circle.', 3500);
-          }
-        }
-        hint = this.hint;
+      hint = this.hintFor(now);
+      if (hint && this.hintToasted !== this.hintIndex) {
+        this.hintToasted = this.hintIndex;
+        toast('📍 New hint on the map: the hider is inside the yellow circle.', 3500);
       }
     }
 

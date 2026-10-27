@@ -149,10 +149,10 @@ export class Wildlife {
   }
 
   /**
-   * targets: [{ id, pos: Vector3, isLocal, alive }] — seekers only. The hider is never passed in.
-   * onHit(animal) is called when the local player gets bitten.
+   * targets: [{ id, pos: Vector3, alive, onHit? }] — seekers only. The hider is never passed in.
+   * onHit(animal) is set only for players this device controls (you, your bots); it applies the bite.
    */
-  update(dt, targets, camPos, onHit) {
+  update(dt, targets, camPos) {
     const t = this.world.terrain;
     const veg = this.world.vegetation;
     for (const a of this.animals) {
@@ -180,7 +180,7 @@ export class Wildlife {
         tx = prey.pos.x; tz = prey.pos.z; speed = sp.run;
         if (pd < 1.7 + sp.len * 0.4) {
           a.cooldown = 2.2;
-          if (prey.isLocal) onHit(a);
+          prey.onHit?.(a);
         }
       } else if (a.state === 'recover') {
         // Back off after a bite so players get a chance to escape.

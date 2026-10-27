@@ -14,6 +14,7 @@ import { PLAYER_COLORS } from '../entities/character.js';
 const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 export const makeCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 const r2 = (v) => Math.round(v * 100) / 100;
+const BOT_NAMES = ['🤖 Zuri', '🤖 Juma', '🤖 Nala', '🤖 Tano'];
 
 export class Room {
   constructor(backend, { minPlayers = GAME.minPlayers } = {}) {
@@ -31,7 +32,9 @@ export class Room {
     const p = this.data?.players || {};
     return Object.entries(p).map(([id, v]) => ({ id, ...v })).sort((a, b) => a.joinedAt - b.joinedAt);
   }
-  get hostId() { return this.players[0]?.id; }
+  get humans() { return this.players.filter((p) => !p.bot); }
+  get hostId() { return this.humans[0]?.id; }
+  get myBots() { return this.players.filter((p) => p.bot === this.uid); }
   get isHost() { return this.hostId === this.uid; }
   get me() { return this.data?.players?.[this.uid]; }
   player(id) { return this.data?.players?.[id]; }
@@ -77,7 +80,8 @@ export class Room {
   async leave() {
     if (!this.code) return;
     this.unsub?.();
-    const alone = this.players.length <= 1;
+    const alone = this.humans.length <= 1;
+    if (!alone) for (const bot of this.myBots) await this.b.remove(`${this.base}/players/${bot.id}`);
     await this.b.remove(alone ? this.base : `${this.base}/players/${this.uid}`);
     this.code = null;
     this.data = null;
@@ -85,9 +89,9 @@ export class Room {
 
   // ---- actions --------------------------------------------------------------
 
-  sendPose(s) {
+  sendPose(s, id = this.uid) {
     if (!this.code) return;
-    this.b.set(`${this.base}/players/${this.uid}/s`, {
+    this.b.set(`${this.base}/players/${id}/s`, {
       x: r2(s.x), y: r2(s.y), z: r2(s.z), h: r2(s.h), v: r2(s.v), a: s.a ? 1 : 0, c: s.c ? 1 : 0, hp: Math.round(s.hp),
     });
   }
@@ -112,17 +116,35 @@ export class Room {
     await this.tx((cur) => ({ phase: 'lobby', round: cur.round || 0, scores: cur.scores || {} }));
   }
 
-  roll() {
+  roll(id = this.uid) {
     const st = this.state;
     const v = 1 + Math.floor(Math.random() * 6);
-    this.b.set(`${this.base}/players/${this.uid}/roll`, { v, r: st.diceRound, g: st.round });
+    this.b.set(`${this.base}/players/${id}/roll`, { v, r: st.diceRound, g: st.round });
     return v;
   }
 
-  hide(bushId) {
-    this.b.set(`${this.base}/players/${this.uid}/hidden`, { b: bushId, g: this.state.round });
+  hide(bushId, id = this.uid) {
+    this.b.set(`${this.base}/players/${id}/hidden`, { b: bushId, g: this.state.round });
   }
-  unhide() { this.b.remove(`${this.base}/players/${this.uid}/hidden`); }
+  unhide(id = this.uid) { this.b.remove(`${this.base}/players/${id}/hidden`); }
+
+  // ---- bots: computer players simulated by the client that added them --------
+  async addBot() {
+    const players = this.players;
+    if (players.length >= GAME.maxPlayers) throw new Error(`The room is full (${GAME.maxPlayers} players max).`);
+    const used = players.map((p) => p.name);
+    const name = BOT_NAMES.find((n) => !used.includes(n)) || `Bot ${players.length}`;
+    const id = 'bot-' + Math.random().toString(36).slice(2, 8);
+    const color = PLAYER_COLORS.find((c) => !players.some((p) => p.color === c)) || PLAYER_COLORS[3];
+    const path = `${this.base}/players/${id}`;
+    await this.b.set(path, { name, color, joinedAt: this.b.now(), bot: this.uid });
+    // If the owner's device drops, its bots leave with it.
+    await this.b.onDisconnectRemove(path);
+  }
+
+  removeBot(id) {
+    if (this.player(id)?.bot === this.uid) this.b.remove(`${this.base}/players/${id}`);
+  }
   markSearched(bushId) { this.b.set(`${this.base}/searched/${bushId}`, true); }
 
   /** Bush id the hider is currently in, or null. */
